@@ -1,0 +1,25 @@
+spring:
+  main:
+    web-application-type: none
+  application:
+    name: haoma-generator
+  datasource:
+    url: jdbc:mysql://localhost:3306/jh_shop_user?allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&allowMultiQueries=true
+    username: root
+    password: root
+
+mybatis-plus:
+  global-config:
+    db-config:
+      column-underline: true
+
+generator:
+  config:
+    author: ChenJiahao(wutiao)
+    out-put-dir: D:\IDEA\WorkSpace\jh-shop-user\jh-shop-user-service\src\main\java
+    table-prefix: user_
+    include-table: user,user_addresses,user_logs,user_payment,user_roles,user_sessions
+    exclude-table:
+    package-name: pers.jhshop
+    file-package-name: /pers/jhshop/user
+    module-name: user

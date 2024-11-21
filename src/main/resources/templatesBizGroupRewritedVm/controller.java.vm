@@ -1,0 +1,78 @@
+package ${package.Controller};
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import pers.jhshop.common.entity.ResultBo;
+import pers.jhshop.user.consts.JhShopUserApiConstants;
+import pers.jhshop.${package.ModuleName}.model.req.${entity}CreateReq;
+import pers.jhshop.${package.ModuleName}.model.req.${entity}QueryReq;
+import pers.jhshop.${package.ModuleName}.model.req.${entity}UpdateReq;
+import pers.jhshop.${package.ModuleName}.model.vo.${entity}VO;
+import ${package.Service}.${table.serviceName};
+##import ${package.Entity}.${entity};
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
+#set($serviceFieldName=$entity.substring(0,1).toLowerCase()+$entity.substring(1)+"Service")
+###if(${restControllerStyle})
+##import org.springframework.web.bind.annotation.RestController;
+###else
+##import org.springframework.stereotype.Controller;
+###end
+#if(${superControllerClassPackage})
+import ${superControllerClassPackage};
+#end
+/**
+ * <p>
+ * $!{table.comment} 前端控制器
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@Slf4j
+#if(${restControllerStyle})
+@RestController
+#else
+@Controller
+#end
+#set($uri=$entity.replace("OperatorOrder", ""))
+#set($uri=$uri.substring(0,1).toLowerCase()+$uri.substring(1))
+@RequestMapping(JhShopUserApiConstants.API_USER + "${uri}")
+@RequiredArgsConstructor
+#if(${kotlin})
+class ${table.controllerName}#if(${superControllerClass}) : ${superControllerClass}()#end
+
+#else
+#if(${superControllerClass})
+public class ${table.controllerName} extends ${superControllerClass} {
+#else
+public class ${table.controllerName} {
+#end
+    private final ${table.serviceName} ${serviceFieldName};
+
+    @PostMapping("create")
+    public ResultBo create(@RequestBody ${entity}CreateReq createReq) {
+        ${serviceFieldName}.createBiz(createReq);
+        return ResultBo.success();
+    }
+
+    @PostMapping("update")
+    public ResultBo update(@RequestBody ${entity}UpdateReq updateReq) {
+        ${serviceFieldName}.updateBiz(updateReq);
+        return ResultBo.success();
+    }
+
+    @GetMapping("getById")
+    public ResultBo<${entity}VO> getById(Long id) {
+        ${entity}VO vo = ${serviceFieldName}.getByIdBiz(id);
+        return ResultBo.success(vo);
+    }
+
+    @PostMapping("page")
+    public ResultBo<Page<${entity}VO>> page(@RequestBody ${entity}QueryReq queryReq) {
+        Page page = ${serviceFieldName}.pageBiz(queryReq);
+        return ResultBo.success(page);
+    }
+}
+
+#end

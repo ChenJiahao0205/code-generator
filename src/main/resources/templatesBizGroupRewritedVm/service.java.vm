@@ -1,0 +1,48 @@
+package ${package.Service};
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import ${superServiceClassPackage};
+import ${package.Entity}.${entity};
+import pers.jhshop.${package.ModuleName}.model.req.${entity}CreateReq;
+import pers.jhshop.${package.ModuleName}.model.req.${entity}QueryReq;
+import pers.jhshop.${package.ModuleName}.model.req.${entity}UpdateReq;
+import pers.jhshop.${package.ModuleName}.model.vo.${entity}VO;
+import java.util.Map;
+import java.util.List;
+
+/**
+ * <p>
+ * $!{table.comment} 服务类
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+#if(${kotlin})
+interface ${table.serviceName} : ${superServiceClass}<${entity}>
+#else
+public interface ${table.serviceName} extends ${superServiceClass}<${entity}> {
+
+    void createBiz(${entity}CreateReq createReq);
+
+    void updateBiz(${entity}UpdateReq updateReq);
+
+    ${entity}VO getByIdBiz(Long id);
+
+    Page<${entity}VO> pageBiz(${entity}QueryReq queryReq);
+
+    Page<${entity}> page(${entity}QueryReq queryReq);
+
+    List<${entity}> listByQueryReq(${entity}QueryReq queryReq);
+
+    Map<Long, ${entity}> getIdEntityMap(List<Long> ids);
+
+    ${entity} getOneByQueryReq(${entity}QueryReq queryReq);
+
+#if($entity.contains("Group"))
+    Map<Long, String> getGroupIdAndNameMap(List<Long> groupIds);
+
+#else
+#end
+}
+#end

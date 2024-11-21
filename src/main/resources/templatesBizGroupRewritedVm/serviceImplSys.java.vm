@@ -1,0 +1,317 @@
+package ${package.ServiceImpl};
+
+import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+#if(true)
+#else
+import pers.jhshop.${package.ModuleName}.service.I${entity}GroupService;
+import pers.jhshop.operator.service.IDictionaryService;
+#end
+import lombok.RequiredArgsConstructor;
+import com.baomidou.mybatisplus.core.metadata.OrderItem;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import pers.jhshop.${package.ModuleName}.model.req.${entity}CreateReq;
+import pers.jhshop.${package.ModuleName}.model.req.${entity}QueryReq;
+import pers.jhshop.${package.ModuleName}.model.req.${entity}UpdateReq;
+import pers.jhshop.${package.ModuleName}.model.vo.${entity}VO;
+import ${package.Entity}.${entity};
+import ${package.Mapper}.${table.mapperName};
+import ${package.Service}.${table.serviceName};
+import ${superServiceImplClassPackage};
+import pers.jhshop.common.exception.ServiceException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.apache.commons.lang3.StringUtils;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.function.Function;
+
+/**
+ * <p>
+ * $!{table.comment} 服务实现类
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+#if(${kotlin})
+open class ${table.serviceImplName} : ${superServiceImplClass}<${table.mapperName}, ${entity}>(), ${table.serviceName} {
+
+}
+#else
+public class ${table.serviceImplName} extends ${superServiceImplClass}<${table.mapperName}, ${entity}> implements ${table.serviceName} {
+
+#if(!true)
+#set($IGroupService = "I" + $entity + "GroupService")
+#set($GroupServiceName = $entity.substring(0,1).toLowerCase() + $entity.substring(1) + "GroupService")
+
+    private final ${IGroupService} ${GroupServiceName};
+
+    private final IDictionaryService dictionaryService;
+#end
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void createBiz(${entity}CreateReq createReq) {
+## ----------  BEGIN 字段循环遍历  ----------
+#foreach($field in ${table.fields})
+#if(!${field.keyFlag}
+&& !("CREATE_TIME" == ${field.name})
+&& !("UPDATE_TIME"==${field.name})
+&& !("VALID_FLAG" == ${field.name})
+&& !("CREATE_ID" == ${field.name})
+&& !("UPDATE_ID" == ${field.name})
+)## 非主键
+#set($methodFieldName=$field.propertyName.substring(0,1).toUpperCase()+$field.propertyName.substring(1))
+#if(${field.propertyType} == "Long" || $field.name.contains("CODE") || $field.name.equals("NAME") )
+        if (Objects.isNull(createReq.get${methodFieldName}())) {
+            throw new ServiceException("${field.comment}不能为空");
+        }
+
+#end
+#end
+#end
+## ----------  END 字段循环遍历  ----------
+
+
+##        // 2.编码默认值
+##        if (Objects.isNull(createReq.getValidFlag())) {
+##            createReq.setValidFlag(true);
+##        }
+    ## ----------  BEGIN 字段循环遍历  ----------
+##    #foreach($field in ${table.fields})
+##        #if(("NAME" == ${field.name}))
+##            #set($methodFieldName=$field.propertyName.substring(0,1).toUpperCase()+$field.propertyName.substring(1))
+##            #if(${field.propertyType} == "Long" || $field.name.contains("CODE") || $field.name.equals("NAME") )
+##                    if (Objects.isNull(createReq.get${methodFieldName}())) {
+##                    throw new ServiceException("${field.comment}不能为空");
+##                    }
+##
+##            #end
+##        #end
+##    #end
+    ## ----------  END 字段循环遍历  ----------
+#if(false)
+        // 3.重复性判断
+#set($paramGroup = $entity.substring(0,1).toLowerCase() + $entity.substring(1))
+${entity} entity = new ${entity}();
+        LambdaQueryWrapper<${entity}> queryWrapper = Wrappers.lambdaQuery();
+        queryWrapper.eq(Objects.nonNull(createReq.getName()), ${entity}::getName, createReq.getName());
+        ${entity} $paramGroup = entity.selectOne(queryWrapper);
+        if (Objects.nonNull($paramGroup)) {
+            throw new ServiceException("名称不能重复");
+        }
+#else
+${entity} entity = new ${entity}();
+#end
+        BeanUtil.copyProperties(createReq, entity);
+
+        boolean insertResult = entity.insert();
+
+        if (!insertResult) {
+            throw new ServiceException("数据插入失败");
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateBiz(${entity}UpdateReq updateReq) {
+
+        // 1.入参有效性判断
+        if (Objects.isNull(updateReq.getId())) {
+            throw new ServiceException("id不能为空");
+        }
+
+        ${entity} entity = getById(updateReq.getId());
+        if (Objects.isNull(entity)) {
+            throw new ServiceException("$!{table.comment}不存在");
+        }
+
+        // 2.重复性判断
+    #if(false)
+    LambdaQueryWrapper<${entity}> queryWrapper = Wrappers.lambdaQuery();
+        queryWrapper.eq(Objects.nonNull(updateReq.getName()), ${entity}::getName, updateReq.getName());
+        ${entity} ${paramGroup} = entity.selectOne(queryWrapper);
+        if (Objects.nonNull(${paramGroup})) {
+            if (!Objects.equals(updateReq.getId(), ${paramGroup}.getId())) {
+                throw new ServiceException("名称不能重复");
+            }
+        }
+
+    #else
+    #end
+${entity} entityToUpdate = new ${entity}();
+        BeanUtil.copyProperties(updateReq, entityToUpdate);
+
+        boolean updateResult = entityToUpdate.updateById();
+        if (!updateResult) {
+            throw new ServiceException("数据更新失败");
+        }
+    }
+
+    @Override
+    public ${entity}VO getByIdBiz(Long id) {
+        // 1.入参有效性判断
+        if (Objects.isNull(id)) {
+            throw new ServiceException("id不能为空");
+        }
+
+        // 2.存在性判断
+        ${entity} entity = getById(id);
+        if (Objects.isNull(entity)) {
+            throw new ServiceException("$!{table.comment}不存在");
+        }
+
+        ${entity}VO vo = new ${entity}VO();
+        BeanUtil.copyProperties(entity, vo);
+
+    #if(!true)
+    // groupId翻译
+        List<Long> groupIds = new ArrayList<>();
+        groupIds.add(vo.getGroupId());
+        Map<Long, String> groupIdAndNameMap = ${GroupServiceName}.getGroupIdAndNameMap(groupIds);
+        vo.setGroupName(groupIdAndNameMap.get(vo.getGroupId()));
+
+##        // paramCode翻译
+##        List<String> paramCodes = new ArrayList<>();
+##        paramCodes.add(vo.getParamCode());
+##        Map<String, String> paramCodeAndDescMap = dictionaryService.dicCodeAndNameMap(paramCodes);
+##        vo.setParamCodeDesc(paramCodeAndDescMap.get(vo.getParamCode()));
+
+    #end
+        return vo;
+    }
+
+    @Override
+    public Page<${entity}VO> pageBiz(${entity}QueryReq queryReq) {
+        Page<${entity}> page = new Page<>(queryReq.getCurrent(), queryReq.getSize());
+        page.addOrder(OrderItem.desc("id"));
+
+        LambdaQueryWrapper<${entity}> queryWrapper = getLambdaQueryWrapper(queryReq);
+#if(false)
+        String keywordsLike = queryReq.getKeywords();
+        queryWrapper.and(StringUtils.isNotBlank(keywordsLike), qw -> {
+        qw.like(${entity}::getName, keywordsLike)
+        .or()
+        .like(${entity}::getDescription ,keywordsLike);
+        });
+#end
+## ----------  END 字段循环遍历  ----------
+
+        page(page, queryWrapper);
+
+        Page<${entity}VO> pageVOResult = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        List<${entity}> records = page.getRecords();
+        if (CollectionUtils.isEmpty(records)) {
+            return pageVOResult;
+        }
+
+    #if(!true)
+    // 从字典中查询参数编码描述
+##        // paramCode翻译
+##        List<String> paramCodes = records.stream().map(${entity}::getParamCode).distinct().collect(Collectors.toList());
+##        Map<String, String> paramCodeAndDescMap = dictionaryService.dicCodeAndNameMap(paramCodes);
+
+        // groupId翻译
+        List<Long> groupIds = records.stream().map(${entity}::getGroupId).distinct().collect(Collectors.toList());
+        Map<Long, String> groupIdAndNameMap = ${GroupServiceName}.getGroupIdAndNameMap(groupIds);
+
+    #end
+    List<${entity}VO> vos = records.stream().map(record -> {
+            ${entity}VO vo = new ${entity}VO();
+            BeanUtil.copyProperties(record, vo);
+    #if(!true)
+                vo.setGroupName(groupIdAndNameMap.get(vo.getGroupId()));
+##                vo.setParamCodeDesc(paramCodeAndDescMap.get(vo.getParamCode()));
+    #end
+
+            return vo;
+        }).collect(Collectors.toList());
+
+        pageVOResult.setRecords(vos);
+        return pageVOResult;
+    }
+
+    @Override
+    public Page<${entity}> page(${entity}QueryReq queryReq) {
+        Page<${entity}> page = new Page<>(queryReq.getCurrent(), queryReq.getSize());
+        LambdaQueryWrapper<${entity}> queryWrapper = getLambdaQueryWrapper(queryReq);
+        page(page, queryWrapper);
+        return page;
+    }
+
+    @Override
+    public List<${entity}> listByQueryReq(${entity}QueryReq queryReq) {
+        LambdaQueryWrapper<${entity}> queryWrapper = getLambdaQueryWrapper(queryReq);
+        List<${entity}> listByQueryReq = list(queryWrapper);
+        return listByQueryReq;
+    }
+
+    @Override
+    public Map<Long, ${entity}> getIdEntityMap(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return new HashMap<>();
+        }
+
+        LambdaQueryWrapper<${entity}> queryWrapper = Wrappers.lambdaQuery();
+        queryWrapper.in(${entity}::getId, ids);
+        List<${entity}> entities = list(queryWrapper);
+        if (CollectionUtils.isEmpty(entities)) {
+            return new HashMap<>();
+        }
+
+        return entities.stream().collect(Collectors.toMap(${entity}::getId, Function.identity(), (v1, v2) -> v1));
+    }
+
+    @Override
+    public ${entity} getOneByQueryReq(${entity}QueryReq queryReq) {
+        LambdaQueryWrapper<${entity}> queryWrapper = getLambdaQueryWrapper(queryReq);
+        queryWrapper.last("LIMIT 1");
+
+        List<${entity}> listByQueryReq = list(queryWrapper);
+        if (CollectionUtils.isEmpty(listByQueryReq)) {
+            return null;
+        }
+
+        return listByQueryReq.get(0);
+    }
+
+    private LambdaQueryWrapper<${entity}> getLambdaQueryWrapper(${entity}QueryReq queryReq) {
+        LambdaQueryWrapper<${entity}> queryWrapper = Wrappers.lambdaQuery();
+
+## ----------  BEGIN 字段循环遍历  ----------
+#foreach($field in ${table.fields})
+#if(!("CREATE_TIME" == ${field.name}) && !("UPDATE_TIME"==${field.name}))## 非主键
+#set($methodFieldName=$field.propertyName.substring(0,1).toUpperCase()+$field.propertyName.substring(1))
+#if(${field.propertyType} == "String")
+        queryWrapper.eq(StringUtils.isNotBlank(queryReq.get${methodFieldName}()), ${entity}::get${methodFieldName}, queryReq.get${methodFieldName}());
+        queryWrapper.like(StringUtils.isNotBlank(queryReq.get${methodFieldName}Like()), ${entity}::get${methodFieldName}, queryReq.get${methodFieldName}Like());
+#else
+        queryWrapper.eq(Objects.nonNull(queryReq.get${methodFieldName}()), ${entity}::get${methodFieldName}, queryReq.get${methodFieldName}());
+#end
+#end
+#end
+
+        return queryWrapper;
+    }
+
+#if(false)
+
+    public Map<Long, String> getGroupIdAndNameMap(List<Long> groupIds) {
+        if (CollectionUtils.isEmpty(groupIds)) {
+            return new HashMap();
+        }
+        LambdaQueryWrapper<${entity}> groupIdQueryWrapper = Wrappers.lambdaQuery();
+        groupIdQueryWrapper.in(CollectionUtils.isNotEmpty(groupIds), ${entity}::getId, groupIds);
+        List<${entity}> entities = list(groupIdQueryWrapper);
+        return entities.stream().collect(Collectors.toMap(${entity}::getId, ${entity}::getName, (k1, k2) -> k1));
+    }
+#end
+}
+#end
