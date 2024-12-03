@@ -2,7 +2,7 @@ package ${package.Controller};
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import pers.jhshop.common.entity.ResultBo;
-import pers.jhshop.user.consts.JhShopUserApiConstants;
+import pers.jhshop.${package.ModuleName}.consts.JhShopUserApiConstants;
 import pers.jhshop.${package.ModuleName}.model.req.${entity}CreateReq;
 import pers.jhshop.${package.ModuleName}.model.req.${entity}QueryReq;
 import pers.jhshop.${package.ModuleName}.model.req.${entity}UpdateReq;
